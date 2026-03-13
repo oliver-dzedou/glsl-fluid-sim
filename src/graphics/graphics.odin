@@ -1,15 +1,24 @@
 package graphics
 
-import "base:intrinsics"
 import "core:c"
 import "core:fmt"
-import "core:log"
-import "core:strings"
 import "vendor:raylib"
 import "vendor:raylib/rlgl"
 
 Texture :: raylib.RenderTexture
 Shader :: raylib.Shader
+
+Color :: struct {
+	r, g, b, a: f32,
+}
+
+to_u8 :: proc(color: Color) -> [4]u8 {
+	return [4]u8{u8(color.r * 255), u8(color.g * 255), u8(color.b * 255), u8(color.a * 255)}
+}
+
+to_rl :: proc(color: Color) -> raylib.Color {
+	return raylib.Color(to_u8(color))
+}
 
 // Functions as a hint to the GPU driver on what the SSBO will be used for
 // Is only a hint, does not have to be respected by the GPU driver, if it is respected and used correctly

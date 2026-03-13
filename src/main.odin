@@ -1,9 +1,7 @@
 package main
 
-import "bloom"
-import "chromatic_aberration"
 import "fluids"
-import "libs/graphics"
+import "graphics"
 import "vendor:raylib"
 
 WIDTH :: 1600
@@ -12,7 +10,6 @@ HEIGHT :: 900
 IS_SIMPLE :: true
 
 main :: proc() {
-	/* ---== INITIALIZATION ---== */
 	when ODIN_DEBUG {
 		track: mem.Tracking_Allocator
 		mem.tracking_allocator_init(&track, context.allocator)
@@ -38,6 +35,7 @@ main :: proc() {
 	raylib.InitWindow(WIDTH, HEIGHT, "GLSL Fluid Sim")
 	raylib.SetTargetFPS(165)
 	fluid_sim: fluids.FluidSim
+
 	when IS_SIMPLE {
 		fluid_sim = fluids.init_simple(WIDTH, HEIGHT, 0.2, 0.15, 0.25)
 	} else {
@@ -45,10 +43,7 @@ main :: proc() {
 	}
 
 	scene: graphics.Texture
-	/* ---== END INITIALIZATION ---== */
 
-
-	/* ---== MAIN LOOP ---== */
 	for true {
 		defer free_all(context.temp_allocator)
 		frametime := raylib.GetFrameTime()
@@ -83,39 +78,16 @@ main :: proc() {
 			)
 		}
 
-		when IS_SIMPLE {
-			fluids.step_simple(&fluid_sim, frametime)
-			fluids.draw_simple(&fluid_sim)
-		} else {
-			fluids.step(&fluid_sim, frametime)
-			fluids.draw(&fluid_sim)
-		}
+		fluids.step(&fluid_sim, frametime)
+		fluids.draw(&fluid_sim)
 		scene = fluid_sim.draw_texture
-		bloomed_scene := bloom.pass(scene, graphics.Resolution{WIDTH, HEIGHT})
-		aberrated_scene := chromatic_aberration.pass(
-			bloomed_scene,
-			graphics.Resolution{WIDTH, HEIGHT},
-		)
 		graphics.begin_drawing()
-		graphics.texture_rect(WIDTH, HEIGHT, aberrated_scene)
+		graphics.texture_rect(WIDTH, HEIGHT, scene)
 		graphics.end_drawing()
 
-		if raylib.WindowShouldClose() {
-			break
-		}
-
+		if raylib.WindowShouldClose() do break
 	}
-	/* ---== END MAIN LOOP ---== */
 
-
-	/* ---== DE-INITIALIZATION ---== */
-	bloom.destroy()
-	chromatic_aberration.destroy()
 	graphics.unload_texture(&scene)
-	when IS_SIMPLE {
-		fluids.destroy_simple(&fluid_sim)
-	} else {
-		fluids.destroy(&fluid_sim)
-	}
-	/* ---== END DE-INITIALIZATION ---== */
+	fluids.destroy(&fluid_sim)
 }
